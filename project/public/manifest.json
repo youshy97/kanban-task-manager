@@ -1,0 +1,19 @@
+{
+  "name": "TaskFlow Pro — Project Management",
+  "short_name": "TaskFlow",
+  "description": "Professional project management with Kanban boards, analytics, RBAC, and AI assistant.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"]
+}
