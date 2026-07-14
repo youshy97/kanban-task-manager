@@ -36,7 +36,8 @@ export interface Task {
   completion: number;
   tags: string[];
   created_by: string;
-  assigned_to: string | null;
+  assigned_to: string | null;  // Keep for backward compat (primary assignee)
+  shared_with: string[];        // NEW: Array of user IDs who can see/edit this task
   due_date: string | null;
   checklist: ChecklistItem[];
   created_at: string;
