@@ -102,21 +102,21 @@ export function TaskModal({
     onUpdated(updated);
   };
 
-  const handleFile = async (file: File) => {
-    if (!profile) return;
-    const path = `${task.id}/${Date.now()}-${file.name}`;
-    const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file);
-    if (upErr) return;
-    await supabase.from('attachments').insert({
-      task_id: task.id,
-      user_id: profile.id,
-      file_name: file.name,
-      file_path: path,
-      file_size: file.size,
-      file_type: file.type,
-    });
-    await supabase.from('activity_logs').insert({ task_id: task.id, action: 'uploaded', detail: `Uploaded ${file.name}` });
-  };
+const handleFile = async (file: File) => {
+  if (!profile) return;
+  const path = `${task.id}/${Date.now()}-${file.name}`;
+  const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file);
+  if (upErr) return;
+  await supabase.from('attachments').insert({
+    task_id: task.id,
+    user_id: profile.id,
+    file_name: file.name,
+    file_path: path,
+    file_size: file.size,
+    file_type: file.type,
+  });
+  await supabase.from('activity_logs').insert({ task_id: task.id, action: 'uploaded', detail: `Uploaded ${file.name}` });
+};
 
   const handleDelete = async () => {
     if (!confirm('Delete this task? This cannot be undone.')) return;
