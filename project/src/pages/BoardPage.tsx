@@ -1,5 +1,14 @@
 import { useState } from 'react';
-// ... existing imports ...
+import { KanbanBoard } from '../components/KanbanBoard';
+import { TaskModal } from '../components/TaskModal';
+import { Button, Modal, Input, Textarea, Select } from '../components/ui';
+import { Plus, Download, FileText, FileSpreadsheet, Printer } from 'lucide-react';
+import type { Task, TaskStatus, Priority, Profile } from '../lib/types';
+import { COLUMNS, PRIORITIES } from '../lib/constants';
+import { createTask, moveTask } from '../lib/hooks';
+import { useAuth } from '../lib/auth';
+import { can } from '../lib/rbac';
+import { exportCSV, exportExcel, exportPDF, printTasks } from '../lib/exporter';
 
 export function BoardPage({
   tasks, profiles, onChanged,
