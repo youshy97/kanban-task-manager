@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, useContext, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CheckSquare, Mail, Lock, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../lib/auth';
