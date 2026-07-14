@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { TaskModal } from '../components/TaskModal';
 import { Button, Modal, Input, Textarea, Select } from '../components/ui';
 import { Plus, Download, FileText, FileSpreadsheet, Printer } from 'lucide-react';
 import type { Task, TaskStatus, Priority, Profile } from '../lib/types';
 import { COLUMNS, PRIORITIES } from '../lib/constants';
-import { createTask, moveTask } from '../lib/hooks';
+import { createTask, moveTask, updateTask } from '../lib/hooks';
 import { useAuth } from '../lib/auth';
 import { can } from '../lib/rbac';
 import { exportCSV, exportExcel, exportPDF, printTasks } from '../lib/exporter';
@@ -21,6 +21,7 @@ export function BoardPage({
   const [editing, setEditing] = useState<Task | null>(null);
   const [creating, setCreating] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const canEdit = can(profile?.role, 'edit_task');
   const canExport = can(profile?.role, 'export_data');
@@ -31,9 +32,9 @@ export function BoardPage({
   const [newPriority, setNewPriority] = useState<Priority>('medium');
   const [newDue, setNewDue] = useState('');
   const [newTags, setNewTags] = useState('');
-  const [newAssignedTo, setNewAssignedTo] = useState('');  // NEW: Primary assignee
-  const [newSharedWith, setNewSharedWith] = useState<string[]>([]);  // NEW: Shared users
-  const [showShareMenu, setShowShareMenu] = useState(false);  // NEW
+  const [newAssignedTo, setNewAssignedTo] = useState('');
+  const [newSharedWith, setNewSharedWith] = useState<string[]>([]);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   const handleCreate = async () => {
     if (!newTitle.trim() || !profile) return;
@@ -47,9 +48,8 @@ export function BoardPage({
         tags: newTags.split(',').map((t) => t.trim()).filter(Boolean),
         created_by: profile.id,
         assigned_to: newAssignedTo || null,
-        shared_with: newSharedWith,  // NEW: Save shared users
+        shared_with: newSharedWith,
       });
-      // Reset form
       setNewTitle('');
       setNewDesc('');
       setNewStatus('backlog');
@@ -65,21 +65,82 @@ export function BoardPage({
     }
   };
 
-  // NEW: Toggle sharing with a user
   const toggleShareUser = (userId: string) => {
     setNewSharedWith((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
-  // ... rest of component ...
+  const handleMove = async (taskId: string, status: TaskStatus) => {
+    try {
+      await moveTask(taskId, status);
+      onChanged();
+    } catch (error) {
+      console.error('Failed to move task:', error);
+    }
+  };
+
+  const handleUpdated = (task: Task) => {
+    setEditing(null);
+    onChanged();
+  };
+
+  const handleDeleted = (taskId: string) => {
+    setEditing(null);
+    onChanged();
+  };
 
   return (
-    <div className="h-full">
-      {/* ... existing header code ... */}
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="px-4 sm:px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Kanban Board</h1>
+          <p className="text-slate-500 text-sm mt-1">Manage and organize your tasks.</p>
+        </div>
+        {(canEdit || canExport) && (
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <Button size="sm" onClick={() => setCreating(true)}>
+                <Plus className="w-4 h-4" /> Add Task
+              </Button>
+            )}
+            {canExport && (
+              <div className="relative">
+                <Button variant="outline" size="sm" onClick={() => setShowExport(!showExport)}>
+                  <Download className="w-4 h-4" /> Export
+                </Button>
+                {showExport && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowExport(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 z-20 py-1">
+                      <button onClick={() => { exportExcel(tasks, profiles); setShowExport(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        <FileSpreadsheet className="w-4 h-4 text-green-600" /> Excel
+                      </button>
+                      <button onClick={() => { exportPDF(tasks, profiles); setShowExport(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        <FileText className="w-4 h-4 text-red-600" /> PDF
+                      </button>
+                      <button onClick={() => { exportCSV(tasks, profiles); setShowExport(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        <FileText className="w-4 h-4 text-blue-600" /> CSV
+                      </button>
+                      <button onClick={() => { printTasks(tasks, profiles); setShowExport(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        <Printer className="w-4 h-4 text-slate-600" /> Print
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      <KanbanBoard tasks={tasks} profiles={profiles} onMove={handleMove} onEdit={setEditing} onCreate={(s) => { setNewStatus(s); setCreating(true); }} />
+      {/* Board */}
+      <div className="flex-1 overflow-auto">
+        <KanbanBoard tasks={tasks} profiles={profiles} onMove={handleMove} onEdit={setEditing} onCreate={(s) => { setNewStatus(s); setCreating(true); }} />
+      </div>
 
+      {/* Task Edit Modal */}
       {editing && (
         <TaskModal
           task={editing}
@@ -90,6 +151,7 @@ export function BoardPage({
         />
       )}
 
+      {/* Create Task Modal */}
       <Modal open={creating} onClose={() => setCreating(false)} title="Create New Task" size="lg">
         <div className="p-6 space-y-4">
           <div>
@@ -123,7 +185,6 @@ export function BoardPage({
             </div>
           </div>
 
-          {/* NEW: Primary Assignee */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label>
             <Select value={newAssignedTo} onChange={(e) => setNewAssignedTo(e.target.value)}>
@@ -134,7 +195,6 @@ export function BoardPage({
             </Select>
           </div>
 
-          {/* NEW: Share With Multiple Users */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Share With</label>
             <div className="relative">
