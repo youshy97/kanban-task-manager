@@ -120,4 +120,4 @@ export function TeamPage({ profiles: initialProfiles, tasks, onChanged }: { prof
       </div>
     </div>
   );
-}22
+}
