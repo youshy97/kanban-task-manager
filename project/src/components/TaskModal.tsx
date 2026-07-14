@@ -428,9 +428,15 @@ const handleDelete = async () => {
               <Button variant="outline" size="sm" className="w-full" onClick={() => setEditing(!editing)}>
                 {editing ? 'Cancel Edit' : 'Edit Task'}
               </Button>
-              <Button variant="danger" size="sm" className="w-full" onClick={handleDelete}>
-                <Trash2 className="w-3.5 h-3.5" /> Delete Task
-              </Button>
+<Button 
+  variant="danger" 
+  size="sm" 
+  className="w-full" 
+  onClick={handleDelete}
+  disabled={deleting}
+>
+  <Trash2 className="w-3.5 h-3.5" /> {deleting ? 'Deleting...' : 'Delete Task'}
+</Button>
             </div>
           )}
         </div>
