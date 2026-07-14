@@ -22,13 +22,29 @@ export function KanbanBoard({ tasks, profiles, onMove, onEdit, onCreate }: Board
 
   const canEdit = can(profile?.role, 'move_task');
 
+  // NEW: Filter tasks visible to current user
+  const visibleTasks = useMemo(() => {
+    if (!profile) return [];
+    return tasks.filter((task) => {
+      // Super admins see all tasks
+      if (profile.role === 'super_admin' || profile.role === 'admin') return true;
+      // Show if user created the task
+      if (task.created_by === profile.id) return true;
+      // Show if task is assigned to this user
+      if (task.assigned_to === profile.id) return true;
+      // Show if task is shared with this user
+      if (task.shared_with?.includes(profile.id)) return true;
+      return false;
+    });
+  }, [tasks, profile]);
+
   const grouped = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = {
       backlog: [], todo: [], in_progress: [], review: [], blocked: [], completed: [], cancelled: [],
     };
-    for (const t of tasks) map[t.status].push(t);
+    for (const t of visibleTasks) map[t.status].push(t);
     return map;
-  }, [tasks]);
+  }, [visibleTasks]);
 
   const handleDrop = (e: DragEvent, status: TaskStatus) => {
     e.preventDefault();
