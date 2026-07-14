@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Mail, User as UserIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Mail, User as UserIcon, AlertCircle } from 'lucide-react';
 import type { Profile, Task } from '../lib/types';
 import { ROLES, roleLabel } from '../lib/constants';
 import { roleBadgeClass, fmtDate } from '../lib/format';
@@ -8,8 +8,11 @@ import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { can } from '../lib/rbac';
 
-export function TeamPage({ profiles, tasks, onChanged }: { profiles: Profile[]; tasks: Task[]; onChanged: () => void }) {
+export function TeamPage({ profiles: initialProfiles, tasks, onChanged }: { profiles: Profile[]; tasks: Task[]; onChanged: () => void }) {
   const { profile } = useAuth();
+  const [profiles, setProfiles] = useState(initialProfiles);  // NEW: Local state for profiles
+  const [loading, setLoading] = useState(false);  // NEW: Loading state
+  const [error, setError] = useState<string | null>(null);  // NEW: Error state
   const canManage = can(profile?.role, 'manage_users');
 
   const stats = useMemo(() => {
@@ -24,9 +27,33 @@ export function TeamPage({ profiles, tasks, onChanged }: { profiles: Profile[]; 
     return map;
   }, [profiles, tasks]);
 
-  const changeRole = async (userId: string, role: Profile['role']) => {
-    await supabase.from('profiles').update({ role }).eq('id', userId);
-    onChanged();
+  // NEW: Enhanced changeRole with error handling and local state update
+  const changeRole = async (userId: string, newRole: Profile['role']) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Update local state immediately for UI feedback
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === userId ? { ...p, role: newRole } : p))
+      );
+
+      // Also call parent refresh to sync with other components
+      onChanged();
+    } catch (err) {
+      console.error('Failed to update role:', err);
+      setError(`Failed to update role for ${profiles.find((p) => p.id === userId)?.full_name}`);
+      // Revert local state on error
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,6 +62,14 @@ export function TeamPage({ profiles, tasks, onChanged }: { profiles: Profile[]; 
         <h1 className="text-2xl font-bold text-slate-900">Team</h1>
         <p className="text-slate-500 text-sm mt-1">{profiles.length} member{profiles.length !== 1 ? 's' : ''} in your workspace.</p>
       </div>
+
+      {/* NEW: Error notification */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2 text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {profiles.map((p) => (
@@ -73,7 +108,8 @@ export function TeamPage({ profiles, tasks, onChanged }: { profiles: Profile[]; 
                 <select
                   value={p.role}
                   onChange={(e) => changeRole(p.id, e.target.value as Profile['role'])}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}  // NEW: Disable while loading
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
                 </select>
