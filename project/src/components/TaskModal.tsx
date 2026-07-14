@@ -126,11 +126,16 @@ const downloadAttachment = (attachment: Attachment) => {
   }
 };
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this task? This cannot be undone.')) return;
+const handleDelete = async () => {
+  if (!confirm('Delete this task? This cannot be undone.')) return;
+  try {
     await deleteTask(task.id);
     onDeleted(task.id);
-  };
+  } catch (error) {
+    console.error('Failed to delete task:', error);
+    alert('Failed to delete task. Please try again.');
+  }
+};
 
   const tabs = [
     { id: 'comments' as const, label: 'Comments', icon: MessageSquare, count: comments.length },
