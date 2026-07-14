@@ -118,6 +118,14 @@ const handleFile = async (file: File) => {
   await supabase.from('activity_logs').insert({ task_id: task.id, action: 'uploaded', detail: `Uploaded ${file.name}` });
 };
 
+  // After line 119, add a download handler:
+const downloadAttachment = (attachment: Attachment) => {
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(attachment.file_path);
+  if (data?.publicUrl) {
+    window.open(data.publicUrl, '_blank');
+  }
+};
+
   const handleDelete = async () => {
     if (!confirm('Delete this task? This cannot be undone.')) return;
     await deleteTask(task.id);
