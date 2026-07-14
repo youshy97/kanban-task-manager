@@ -27,7 +27,7 @@ export function TaskModal({
   const { comments, add: addComment } = useComments(task.id);
   const { attachments, remove: removeAttachment } = useAttachments(task.id);
   const logs = useActivityLog(task.id);
-  const [tab, setTab] = useState<'comments' | 'attachments' | 'checklist' | 'activity'>('comments');
+const [tab, setTab] = useState<'comments' | 'attachments' | 'checklist' | 'activity'>('comments');
 const [commentText, setCommentText] = useState('');
 const [newChecklistItem, setNewChecklistItem] = useState('');
 const [assignMenu, setAssignMenu] = useState(false);
@@ -129,12 +129,15 @@ const downloadAttachment = (attachment: Attachment) => {
 
 const handleDelete = async () => {
   if (!confirm('Delete this task? This cannot be undone.')) return;
+  setDeleting(true);
   try {
     await deleteTask(task.id);
-    onDeleted(task.id);
+    onClose(); // إغلق الـ Modal أولاً
+    onDeleted(task.id); // ثم أخبر الـ Parent
   } catch (error) {
     console.error('Failed to delete task:', error);
     alert('Failed to delete task. Please try again.');
+    setDeleting(false);
   }
 };
 
