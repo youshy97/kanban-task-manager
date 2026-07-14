@@ -16,11 +16,16 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;
   if (e.request.method !== 'GET') return;
 
+  // EXCLUDE Supabase API calls from caching
+  if (url.pathname.includes('/rest/v1/') || url.pathname.includes('/auth/')) {
+    return e.respondWith(fetch(e.request));
+  }
+
   e.respondWith(
     caches.match(e.request).then((cached) => {
       const fetchPromise = fetch(e.request)
         .then((res) => {
-          if (res && res.status === 200) {
+          if (res && res.status === 200 && res.headers.get('content-type')?.includes('text/html')) {
             const clone = res.clone();
             caches.open(CACHE).then((c) => c.put(e.request, clone));
           }
