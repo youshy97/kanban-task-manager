@@ -32,8 +32,9 @@ export function BoardPage({
   const [newDue, setNewDue] = useState('');
   const [newTags, setNewTags] = useState('');
 
-  const handleCreate = async () => {
-    if (!newTitle.trim() || !profile) return;
+const handleCreate = async () => {
+  if (!newTitle.trim() || !profile) return;
+  try {
     await createTask({
       title: newTitle.trim(),
       description: newDesc.trim() || null,
@@ -43,10 +44,20 @@ export function BoardPage({
       tags: newTags.split(',').map((t) => t.trim()).filter(Boolean),
       created_by: profile.id,
     });
+    // Reset form BEFORE closing modal to avoid flash
+    setNewTitle('');
+    setNewDesc('');
+    setNewStatus('backlog');
+    setNewPriority('medium');
+    setNewDue('');
+    setNewTags('');
     setCreating(false);
-    setNewTitle(''); setNewDesc(''); setNewStatus('backlog'); setNewPriority('medium'); setNewDue(''); setNewTags('');
+    // Trigger parent refresh
     onChanged();
-  };
+  } catch (error) {
+    console.error('Failed to create task:', error);
+  }
+};
 
   const handleMove = async (taskId: string, status: TaskStatus) => {
     await moveTask(taskId, status);
