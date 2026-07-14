@@ -284,27 +284,32 @@ const downloadAttachment = (attachment: Attachment) => {
             </div>
           )}
 
-          {tab === 'attachments' && (
-            <div className="space-y-2">
-              <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
-              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-                <Upload className="w-4 h-4" /> Upload File
-              </Button>
-              {attachments.map((a: Attachment) => (
-                <div key={a.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg">
-                  <Paperclip className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{a.file_name}</p>
-                    <p className="text-xs text-slate-400">{(a.file_size / 1024).toFixed(1)} KB</p>
-                  </div>
-                  <button onClick={() => removeAttachment(a.id, a.file_path)} className="text-slate-400 hover:text-red-500 transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {attachments.length === 0 && <p className="text-center text-slate-400 text-sm py-4">No attachments</p>}
-            </div>
-          )}
+{tab === 'attachments' && (
+  <div className="space-y-2">
+    <input ref={fileRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
+    <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+      <Upload className="w-4 h-4" /> Upload File
+    </Button>
+    {attachments.map((a: Attachment) => (
+      <div key={a.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+        <button
+          onClick={() => downloadAttachment(a)}
+          className="flex items-center gap-3 flex-1 cursor-pointer"
+        >
+          <Paperclip className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-blue-600 truncate hover:underline">{a.file_name}</p>
+            <p className="text-xs text-slate-400">{(a.file_size / 1024).toFixed(1)} KB</p>
+          </div>
+        </button>
+        <button onClick={() => removeAttachment(a.id, a.file_path)} className="text-slate-400 hover:text-red-500 transition-colors">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    ))}
+    {attachments.length === 0 && <p className="text-center text-slate-400 text-sm py-4">No attachments</p>}
+  </div>
+)}
 
           {tab === 'checklist' && (
             <div className="space-y-2">
