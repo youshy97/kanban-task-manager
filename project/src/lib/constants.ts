@@ -1,6 +1,12 @@
 import type { Priority, Role, TaskStatus } from './types';
 
-export const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
+export interface ColumnConfig {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export const COLUMNS: ColumnConfig[] = [
   { id: 'backlog', label: 'Backlog', color: 'slate' },
   { id: 'todo', label: 'To Do', color: 'blue' },
   { id: 'in_progress', label: 'In Progress', color: 'amber' },
@@ -46,8 +52,8 @@ export function priorityMeta(p: Priority) {
   return PRIORITIES.find((x) => x.id === p)!;
 }
 
-export function columnMeta(s: TaskStatus) {
-  return COLUMNS.find((x) => x.id === s)!;
+export function columnMeta(s: string) {
+  return COLUMNS.find((x) => x.id === s) || { id: s, label: s, color: 'blue' };
 }
 
 export function roleLabel(r: Role) {
